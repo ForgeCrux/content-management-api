@@ -1,0 +1,230 @@
+{
+  "info" : {
+    "_postman_id" : "2eae9d62-9866-4a17-9e7c-2806a548323d",
+    "name" : "Content Management API",
+    "description" : "Generated Postman collection for content-management-api",
+    "schema" : "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable" : [ {
+    "key" : "baseUrl",
+    "value" : "http://localhost:8080",
+    "type" : "string"
+  }, {
+    "key" : "bearerToken",
+    "value" : "",
+    "type" : "string"
+  }, {
+    "key" : "resourceId",
+    "value" : "sample-id",
+    "type" : "string"
+  }, {
+    "key" : "clientId",
+    "value" : "generated-service-client",
+    "type" : "string"
+  }, {
+    "key" : "clientSecret",
+    "value" : "change-me",
+    "type" : "string"
+  }, {
+    "key" : "scope",
+    "value" : "api.read api.write",
+    "type" : "string"
+  } ],
+  "item" : [ {
+    "name" : "Health",
+    "item" : [ {
+      "name" : "Health",
+      "request" : {
+        "auth" : {
+          "type" : "noauth"
+        },
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/actuator/health",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "actuator", "health" ]
+        }
+      }
+    } ]
+  }, {
+    "name" : "Security",
+    "item" : [ {
+      "name" : "Get OAuth2 Token",
+      "request" : {
+        "auth" : {
+          "type" : "basic",
+          "basic" : [ {
+            "key" : "username",
+            "value" : "{{clientId}}",
+            "type" : "string"
+          }, {
+            "key" : "password",
+            "value" : "{{clientSecret}}",
+            "type" : "string"
+          } ]
+        },
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/x-www-form-urlencoded"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "body" : {
+          "mode" : "urlencoded",
+          "urlencoded" : [ {
+            "key" : "grant_type",
+            "value" : "client_credentials",
+            "type" : "text"
+          }, {
+            "key" : "scope",
+            "value" : "{{scope}}",
+            "type" : "text"
+          } ]
+        },
+        "url" : {
+          "raw" : "{{baseUrl}}/oauth2/token",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "oauth2", "token" ]
+        }
+      },
+      "event" : [ {
+        "listen" : "test",
+        "script" : {
+          "type" : "text/javascript",
+          "exec" : [ "const json = pm.response.json();", "if (json.access_token) {", "  pm.collectionVariables.set(\"bearerToken\", json.access_token);", "}" ]
+        }
+      } ]
+    } ]
+  }, {
+    "name" : "Documents",
+    "item" : [ {
+      "name" : "List all documents",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Authorization",
+          "value" : "Bearer {{bearerToken}}"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/document?ownerId={{resourceId}}&contentType=sample-contentType&page=1&size=1",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "document" ],
+          "query" : [ {
+            "key" : "ownerId",
+            "value" : "{{resourceId}}"
+          }, {
+            "key" : "contentType",
+            "value" : "sample-contentType"
+          }, {
+            "key" : "page",
+            "value" : 1
+          }, {
+            "key" : "size",
+            "value" : 1
+          } ]
+        }
+      }
+    }, {
+      "name" : "Register a new document",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Authorization",
+          "value" : "Bearer {{bearerToken}}"
+        }, {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/document",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "document" ]
+        },
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"fileName\" : \"supplier-contract-2026.pdf\",\n  \"displayName\" : \"Supplier Contract 2026\",\n  \"contentType\" : \"application/pdf\",\n  \"sizeBytes\" : 481203,\n  \"checksum\" : \"9f86d081884c7d659a2feaa0c55ad015\",\n  \"ownerId\" : \"team-legal\",\n  \"tags\" : [ \"contract\", \"supplier\" ]\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        }
+      }
+    }, {
+      "name" : "Delete a document",
+      "request" : {
+        "method" : "DELETE",
+        "header" : [ {
+          "key" : "Authorization",
+          "value" : "Bearer {{bearerToken}}"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/documents/{{{resourceId}}}",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "documents", "{{{resourceId}}}" ]
+        }
+      }
+    }, {
+      "name" : "Get a document by ID",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Authorization",
+          "value" : "Bearer {{bearerToken}}"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/documents/{{{resourceId}}}",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "documents", "{{{resourceId}}}" ]
+        }
+      }
+    }, {
+      "name" : "Update document metadata",
+      "request" : {
+        "method" : "PUT",
+        "header" : [ {
+          "key" : "Authorization",
+          "value" : "Bearer {{bearerToken}}"
+        }, {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/documents/{{{resourceId}}}",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "documents", "{{{resourceId}}}" ]
+        },
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"displayName\" : \"Supplier Contract 2026 (signed)\",\n  \"tags\" : [ \"contract\", \"supplier\", \"signed\" ],\n  \"legalHold\" : true,\n  \"retentionUntil\" : 2102112000000\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        }
+      }
+    } ]
+  } ]
+}

@@ -1,0 +1,7 @@
+{
+  "artifactId" : "content-management-api",
+  "status" : "SKIPPED",
+  "message" : "mockOptions.microserviceId and mockOptions.userEmail are required",
+  "endpointCount" : 0,
+  "generatedAt" : "2026-08-18T02:37:22.230280999Z"
+}

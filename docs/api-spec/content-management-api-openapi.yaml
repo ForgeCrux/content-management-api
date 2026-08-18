@@ -1,0 +1,508 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: documents@example.com
+    name: Content Platform Team
+  description: |
+    Microservice for storing and retrieving business documents such as contracts and receipts.
+    Supports metadata search, versioning, and signed download links.
+  title: Content Management API
+  version: 1.0.0
+servers:
+- description: Production
+  url: https://api.example.com/v1
+- description: Local development
+  url: http://localhost:8080/v1
+tags:
+- description: Operations on stored documents
+  name: Documents
+paths:
+  /document:
+    get:
+      description: "Returns a paginated list of documents, optionally filtered by\
+        \ owner or content type."
+      operationId: listDocuments
+      parameters:
+      - description: Filter by the owning user or team
+        explode: true
+        in: query
+        name: ownerId
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: "Filter by MIME type (e.g., \"application/pdf\")"
+        explode: true
+        in: query
+        name: contentType
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Page number (starts at 1)
+        explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Number of items per page
+        explode: true
+        in: query
+        name: size
+        required: false
+        schema:
+          default: 20
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentListResponse"
+          description: Successful response
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid request - the server could not understand the payload
+            or parameters.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error - something went wrong on the server
+            side.
+      summary: List all documents
+      tags:
+      - Documents
+      x-accepts: application/json
+      x-tags:
+      - tag: Documents
+    post:
+      description: Creates a document record and returns a pre-signed upload URL.
+        The `checksum` must be unique per owner.
+      operationId: createDocument
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+          description: Document registered successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid request - the server could not understand the payload
+            or parameters.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: A document with this checksum already exists
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error - something went wrong on the server
+            side.
+      summary: Register a new document
+      tags:
+      - Documents
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: Documents
+  /documents/{documentId}:
+    delete:
+      description: Permanently removes the document and all of its versions. Documents
+        under legal hold cannot be deleted.
+      operationId: deleteDocument
+      parameters:
+      - description: Unique document identifier (UUID)
+        explode: false
+        in: path
+        name: documentId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Document deleted successfully (no content returned)
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: The requested resource was not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error - something went wrong on the server
+            side.
+      summary: Delete a document
+      tags:
+      - Documents
+      x-accepts: application/json
+      x-tags:
+      - tag: Documents
+    get:
+      description: Retrieves document metadata and a short-lived signed download URL.
+      operationId: getDocumentById
+      parameters:
+      - description: Unique document identifier (UUID)
+        explode: false
+        in: path
+        name: documentId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+          description: Document found
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Document not found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error - something went wrong on the server
+            side.
+      summary: Get a document by ID
+      tags:
+      - Documents
+      x-accepts: application/json
+      x-tags:
+      - tag: Documents
+    put:
+      description: "Updates the display name, tags, or retention policy. The stored\
+        \ bytes and `checksum` cannot be changed."
+      operationId: updateDocument
+      parameters:
+      - description: Unique document identifier (UUID)
+        explode: false
+        in: path
+        name: documentId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDocumentRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+          description: Document updated successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid request - the server could not understand the payload
+            or parameters.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: The requested resource was not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error - something went wrong on the server
+            side.
+      summary: Update document metadata
+      tags:
+      - Documents
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: Documents
+components:
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Invalid request - the server could not understand the payload or
+        parameters.
+    NotFound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: The requested resource was not found.
+    InternalError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+      description: Internal server error - something went wrong on the server side.
+  schemas:
+    Document:
+      example:
+        fileName: supplier-contract-2026.pdf
+        retentionUntil: 2031-08-12T00:00:00.000+00:00
+        displayName: Supplier Contract 2026
+        downloadUrl: https://storage.example.com/signed/d0c1u2m3?exp=1786574059
+        legalHold: false
+        ownerId: team-legal
+        version: 3
+        sizeBytes: 481203
+        tags:
+        - contract
+        - supplier
+        - "2026"
+        checksum: 9f86d081884c7d659a2feaa0c55ad015
+        uploadedAt: 2026-08-12T10:00:00Z
+        id: d0c1u2m3
+        contentType: application/pdf
+      properties:
+        id:
+          description: Unique document ID (UUID)
+          example: d0c1u2m3
+          type: string
+        fileName:
+          example: supplier-contract-2026.pdf
+          type: string
+        displayName:
+          example: Supplier Contract 2026
+          type: string
+        contentType:
+          example: application/pdf
+          type: string
+        sizeBytes:
+          example: 481203
+          type: integer
+        checksum:
+          description: SHA-256 hash of the stored bytes
+          example: 9f86d081884c7d659a2feaa0c55ad015
+          type: string
+        ownerId:
+          example: team-legal
+          type: string
+        version:
+          example: 3
+          type: integer
+        tags:
+          example:
+          - contract
+          - supplier
+          - "2026"
+          items:
+            type: string
+          type: array
+        legalHold:
+          example: false
+          type: boolean
+        retentionUntil:
+          example: 2031-08-12
+          format: date
+          type: string
+        downloadUrl:
+          description: "Short-lived signed URL, valid for 15 minutes"
+          example: https://storage.example.com/signed/d0c1u2m3?exp=1786574059
+          type: string
+        uploadedAt:
+          example: 2026-08-12T10:00:00Z
+          format: date-time
+          type: string
+      required:
+      - contentType
+      - fileName
+      - id
+      - sizeBytes
+      type: object
+    CreateDocumentRequest:
+      example:
+        fileName: supplier-contract-2026.pdf
+        displayName: Supplier Contract 2026
+        checksum: 9f86d081884c7d659a2feaa0c55ad015
+        ownerId: team-legal
+        contentType: application/pdf
+        sizeBytes: 481203
+        tags:
+        - contract
+        - supplier
+      properties:
+        fileName:
+          example: supplier-contract-2026.pdf
+          type: string
+        displayName:
+          example: Supplier Contract 2026
+          type: string
+        contentType:
+          example: application/pdf
+          type: string
+        sizeBytes:
+          example: 481203
+          minimum: 1
+          type: integer
+        checksum:
+          example: 9f86d081884c7d659a2feaa0c55ad015
+          type: string
+        ownerId:
+          example: team-legal
+          type: string
+        tags:
+          example:
+          - contract
+          - supplier
+          items:
+            type: string
+          type: array
+      required:
+      - contentType
+      - fileName
+      - ownerId
+      - sizeBytes
+      type: object
+    UpdateDocumentRequest:
+      example:
+        retentionUntil: 2036-08-12T00:00:00.000+00:00
+        displayName: Supplier Contract 2026 (signed)
+        legalHold: true
+        tags:
+        - contract
+        - supplier
+        - signed
+      properties:
+        displayName:
+          example: Supplier Contract 2026 (signed)
+          type: string
+        tags:
+          example:
+          - contract
+          - supplier
+          - signed
+          items:
+            type: string
+          type: array
+        legalHold:
+          example: true
+          type: boolean
+        retentionUntil:
+          example: 2036-08-12
+          format: date
+          type: string
+      type: object
+    DocumentListResponse:
+      example:
+        size: 20
+        totalPages: 47
+        page: 1
+        content:
+        - fileName: supplier-contract-2026.pdf
+          retentionUntil: 2031-08-12T00:00:00.000+00:00
+          displayName: Supplier Contract 2026
+          downloadUrl: https://storage.example.com/signed/d0c1u2m3?exp=1786574059
+          legalHold: false
+          ownerId: team-legal
+          version: 3
+          sizeBytes: 481203
+          tags:
+          - contract
+          - supplier
+          - "2026"
+          checksum: 9f86d081884c7d659a2feaa0c55ad015
+          uploadedAt: 2026-08-12T10:00:00Z
+          id: d0c1u2m3
+          contentType: application/pdf
+        - fileName: supplier-contract-2026.pdf
+          retentionUntil: 2031-08-12T00:00:00.000+00:00
+          displayName: Supplier Contract 2026
+          downloadUrl: https://storage.example.com/signed/d0c1u2m3?exp=1786574059
+          legalHold: false
+          ownerId: team-legal
+          version: 3
+          sizeBytes: 481203
+          tags:
+          - contract
+          - supplier
+          - "2026"
+          checksum: 9f86d081884c7d659a2feaa0c55ad015
+          uploadedAt: 2026-08-12T10:00:00Z
+          id: d0c1u2m3
+          contentType: application/pdf
+        totalElements: 940
+      properties:
+        page:
+          example: 1
+          type: integer
+        size:
+          example: 20
+          type: integer
+        totalElements:
+          example: 940
+          type: integer
+        totalPages:
+          example: 47
+          type: integer
+        content:
+          items:
+            $ref: "#/components/schemas/Document"
+          type: array
+      type: object
+    ErrorResponse:
+      properties:
+        status:
+          example: 400
+          type: integer
+        errorCode:
+          example: FILE_TOO_LARGE
+          type: string
+        message:
+          example: "Validation failed: sizeBytes exceeds the 50MB limit"
+          type: string
+        timestamp:
+          example: 2026-08-12T10:00:00Z
+          format: date-time
+          type: string
+        path:
+          example: /v1/document
+          type: string
+      required:
+      - message
+      - status
+      type: object
